@@ -2,4 +2,5 @@
 ocv
 
 # others
-*.jpg
+*.swp
+*.swo
