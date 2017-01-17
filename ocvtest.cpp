@@ -20,22 +20,20 @@ class DigitalZoom {
     Mat *image;     // current image
     Mat *oImage; // original image
 
-    int T1 = 1, T2 = 2; // threshold for edge detection
+    int T1 = 7, T2 = 20; // threshold for edge detection
 public:
     DigitalZoom(Mat *oImage) {
         image = new Mat(2*oImage->rows, 2*oImage->cols, oImage->type());
         image->setTo(Scalar(255, 255, 255)); // white image
         this->oImage = oImage;
     }
-    void locallyAdaptiveZoomingAlgorithm(Mat oImage) {
-        image = new Mat(2 * oImage.rows, 2 * oImage.cols, oImage.type());
-        image->setTo(Scalar(255,255,255));
-        CV_Assert(2 * oImage.rows == image->rows);
-        CV_Assert(2 * oImage.cols == image->cols);
+    void locallyAdaptiveZoomingAlgorithm() {
+        CV_Assert(2 * oImage->rows == image->rows);
+        CV_Assert(2 * oImage->cols == image->cols);
 
-        for (int i = 0; i < oImage.rows; i++) {
-            for (int j = 0; j < oImage.cols; j++) {
-                int ucolor = oImage.at<uchar>(i,j);
+        for (int i = 0; i < oImage->rows; i++) {
+            for (int j = 0; j < oImage->cols; j++) {
+                int ucolor = oImage->at<uchar>(i,j);
 
                 int nLine = 2 * i, nCol = 2 * j;
                 CV_Assert(nLine < image->rows);
@@ -43,16 +41,13 @@ public:
                 image->at<uchar>(nLine,nCol) = ucolor;
             }
         }
-
-        //namedWindow("Display window", WINDOW_AUTOSIZE );// Create a window for display.
-        //imshow("Display window", image);
 #if 0
         vector<int> compressionparams;
         compressionparams.push_back(CV_IMWRITE_JPEG_QUALITY);
         imwrite("ScaledImage.jpg", *image, compressionparams);
         imshow("Scaled Image", *image);
 #endif
-       // Edge recognition TODO
+       // Edge recognition
         cout << image->rows << " " << image->cols << endl;
 
         for (int i = 0; i < image->rows; i++) {
@@ -96,7 +91,6 @@ public:
                 // *
                 // P and * P *
                 // *
-
                 if (image->at<uchar>(i,j) == 255 && ((i %2 == 1 && j % 2 == 0) || (i%2 == 0 && j % 2 == 1))) {
                     uchar a = image->at<uchar>(i-1, j);
                     uchar b = image->at<uchar>(i+1, j);
@@ -115,30 +109,6 @@ public:
             }
             }
         }
-#if 0
-        for (int i = 1; i < image.rows - 1; i++) {
-            for (int j = 1; j < image.cols - 1; j++) {
-                if (image.at<uchar>(i,j) == 255 && (i % 2 == 0 || j % 2 == 0)) {
-                    vector<uchar> pixels;
-                    if (A != 255)
-                        pixels.push_back(A);
-                    if (B != 255)
-                        pixels.push_back(B);
-                    if (C != 255)
-                        pixels.push_back(C);
-                    if (D != 255)
-                        pixels.push_back(D);
-                    if (pixels.size() > 0)
-                        image.at<uchar>(i,j) = accumulate(pixels.begin(), pixels.end(), 0)/pixels.size();
-                    //image.at<uchar>(i,j) = 0;
-                }
-
-            }
-        }
-#endif
-        vector<int> compressionparams;
-        compressionparams.push_back(CV_IMWRITE_JPEG_QUALITY);
-        imwrite("stupidpuppy3.jpg", *image, compressionparams);
     }
     // highest diff between 2 pixels
     int range(const vector<uchar> &pixels) {
@@ -162,9 +132,15 @@ public:
     }
 
     void printZoomedImage() {
+        Mat out;
         Size s = image->size();
         cout << s.height << " " << s.width << endl;
         namedWindow("Display window", WINDOW_AUTOSIZE );// Create a window for display.
+
+        vector<int> compressionparams;
+        compressionparams.push_back(CV_IMWRITE_JPEG_QUALITY);
+        imwrite("stupidpuppy5.jpg", *image, compressionparams);
+
         imshow("Display window", *image);
     }
     ~DigitalZoom () {
@@ -190,22 +166,26 @@ int main( int argc, char** argv )
         cout <<  "Could not open or find the image" << std::endl ;
         return -1;
     }
-    ///resize(image, imgOut, Size(), 2, 2, INTER_LANCZOS4);
-    //namedWindow( "Display window", WINDOW_AUTOSIZE );// Create a window for display.
-    //imshow("Display window", imgOut);                // Show our image inside it.
     //------------------
     // My algorithm here
     DigitalZoom dz(&image);
-    dz.locallyAdaptiveZoomingAlgorithm(image);
     dz.addLanczOS4();
+    dz.locallyAdaptiveZoomingAlgorithm();
     dz.printZoomedImage();
+    //
 
+    // Lanczos
+    //Mat imgOut;
+    //resize(image, imgOut, Size(), 2, 2, INTER_LANCZOS4);
+
+    // Write Image to file
 #if 0
     vector<int> compressionparams;
     compressionparams.push_back(CV_IMWRITE_JPEG_QUALITY);
     imwrite("ScaledStrawberry.jpg", imgOut, compressionparams);
     imshow("Scaled Image", imgOut);
 #endif
+
     waitKey(0);                                          // Wait for a keystroke in the window
     return 0;
 }
